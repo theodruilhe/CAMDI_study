@@ -1,2 +1,5 @@
-# CAMDI_study
- Do credit allocation model discriminate ? Applied Econometrics Academic Research project.
+# CAMDI Study: Credit Allocation Model DIscrimination Study
+
+Applied Econometrics Academic Research project.
+
+
