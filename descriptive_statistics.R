@@ -4,6 +4,7 @@ library(glm2)
 library(viridis)
 library(fastDummies)
 
+# DATA IMPORTATION
 initial_data <- read.csv("data_michigan.csv", header = TRUE, sep = ",")
 data_final <- read.csv("data_final.csv", header = TRUE, sep = ",")
 
@@ -108,4 +109,3 @@ barplot(table(data_final$applicant_age))
 ## SAME SEX APPLICATION
 table(data_final$same_sex)
 barplot(table(data_final$same_sex))
-
