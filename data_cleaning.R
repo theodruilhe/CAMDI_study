@@ -141,4 +141,5 @@ data_final <- data_temp[, (names(data_temp) %in%  c("deny", "derived_race", "loa
                                                     "applicant_sex", "applicant_age", "same_sex"))]
 
 # Export data to csv
-write.csv(data_temp, "data_final.csv", row.names = FALSE)
+write.csv(data_final, "data_final.csv", row.names = FALSE)
+
