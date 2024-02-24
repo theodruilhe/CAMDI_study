@@ -128,8 +128,6 @@ data_temp <- subset(data_temp, loan_to_value_ratio < 150)
 
 
 ## INCOME
-summary(data_temp$income)
-hist(data_temp$income, breaks = 50)
 # deleting outliers: based on the histogram, we have arbitrarily chosen to eliminate values below 500,000.
 # We have also chosen to remove negative income values, as they make no sense in this context.
 data_temp <- subset(data_temp, income < 500)
@@ -137,7 +135,6 @@ data_temp <- subset(data_temp, income > 0)
 
 
 #### CREATION OF FINAL DATA SET ####
-colnames(data_temp)
 data_final <- data_temp[, (names(data_temp) %in%  c("deny", "derived_race", "loan_purpose", "loan_amount", 
                                                     "loan_to_value_ratio", "interest_rate", "loan_term",
                                                     "property_value", "income", "applicant_credit_score_type",
