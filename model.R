@@ -21,7 +21,6 @@ data_final$applicant_age <- as.factor(data_final$applicant_age)
 data_final$deny <- as.factor(data_final$deny)
 data_final$applicant_sex <- as.factor(data_final$applicant_sex)
 data_final$same_sex <- as.factor(data_final$same_sex)
-data_final$income <- data_final$income * 1000
 
 data_final$derived_race <- relevel(data_final$derived_race, ref = "White")
 data_final$loan_purpose <- relevel(data_final$loan_purpose, ref = "1")
@@ -35,6 +34,7 @@ data_final$same_sex <- relevel(data_final$same_sex, ref = "0")
 data_final$loan_amount <- as.numeric(data_final$loan_amount)
 data_final$loan_term <- as.numeric(data_final$loan_term)
 data_final$property_value <- as.numeric(data_final$property_value)
+data_final$income <- data_final$income * 1000
 
 ### CORRELATION TEST ###
 cor.test(data_final$loan_amount,data_final$income) # significant correlation and 0.42
@@ -75,4 +75,25 @@ X2 <- model.matrix(~ derived_race + applicant_age + income, data = data_final)
 model_2 <- glm(deny ~ X2, data = data_final, family = "binomial")
 summary(model_2)
 # we can see that the variable "income" is significant and it obvious that it explain the deny, then we will keep it in the model
+
+
+### Model 3 ###
+# Add some control variables
+X3 <- model.matrix(~ derived_race + applicant_age + income + loan_amount 
+                   + loan_purpose + loan_term + property_value + applicant_age, data = data_final)
+
+model_3 <- glm(deny ~ X3, data = data_final, family = "binomial")
+summary(model_3)
+
+
+### MODEL INTEREST RATE ###
+# remove NA interest rate
+data_IR <- data_final[!is.na(data_final$interest_rate),]
+
+X4 <- model.matrix(~ derived_race + applicant_age + income + loan_amount 
+               + loan_purpose + loan_term + property_value + applicant_age, data = data_IR)
+
+model_4 <- lm(interest_rate ~ X4, data = data_IR)
+summary(model_4)
+
 
