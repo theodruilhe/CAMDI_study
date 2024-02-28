@@ -65,6 +65,7 @@ print(vif_result)
 # deny = Beta_0 + Beta_1*race + Beta_2*sex + Beta_3*age + Beta_4*same_sex
 X1 <- model.matrix(~ derived_race + applicant_sex + applicant_age + same_sex, data = data_final)
 model_1 <- glm(deny ~ X1, data = data_final, family = "binomial")
+coef_1 <- coefficients(model_1)
 summary(model_1)
 # we can see that the variable "applicant_sex" and "same_sex" are not significant then we will remove it from the model
 
@@ -73,6 +74,7 @@ summary(model_1)
 # Add some control variables
 X2 <- model.matrix(~ derived_race + applicant_age + income, data = data_final)
 model_2 <- glm(deny ~ X2, data = data_final, family = "binomial")
+coef_2 <- coefficients(model_2)
 summary(model_2)
 # we can see that the variable "income" is significant and it obvious that it explain the deny, then we will keep it in the model
 
@@ -80,20 +82,54 @@ summary(model_2)
 ### Model 3 ###
 # Add some control variables
 X3 <- model.matrix(~ derived_race + applicant_age + income + loan_amount 
-                   + loan_purpose + loan_term + property_value + applicant_age, data = data_final)
+                   + loan_purpose + loan_term + property_value, data = data_final)
 
 model_3 <- glm(deny ~ X3, data = data_final, family = "binomial")
 summary(model_3)
+coef_3 <- coefficients(model_3)
+coef_3 <- coef_3[!is.na(coef_3)]
+coef_3
+
+
+### INTERPRETATION OF RESULTS ###
+xasian <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), 
+            mean(data_final$loan_amount), 0, 0, 0, 0, 
+            mean(data_final$loan_term),mean(data_final$property_value))
+xblack <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income),
+            mean(data_final$loan_amount), 0, 0, 0, 0, 
+            mean(data_final$loan_term),mean(data_final$property_value))
+xnative <- c(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, mean(data_final$income), 
+             mean(data_final$loan_amount), 0, 0, 0, 0,
+             mean(data_final$loan_term),mean(data_final$property_value))
+xwhite <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), 
+            mean(data_final$loan_amount), 0, 0, 0, 0, 
+            mean(data_final$loan_term),mean(data_final$property_value))
+
+p_black <- exp(coef_3 %*% xblack) / (1 + exp(coef_3 %*% xblack)) # Probability of being deny for the black people
+p_native <- exp(coef_3 %*% xnative) / (1 + exp(coef_3 %*% xnative)) # Probability of being deny for the native people
+p_asian <- exp(coef_3 %*% xasian) / (1 + exp(coef_3 %*% xasian)) # Probability of being deny for the asian people
+p_white <- exp(coef_3 %*% xwhite) / (1 + exp(coef_3 %*% xwhite))     # Probability of being deny for the white people
+
+p_black
+p_native
+p_white
+p_asian
+
+
+matrix_p <- matrix(c(p_black, p_native, p_asian, p_white), nrow = 1)
+colnames(matrix_p)<- c("P(deny|black)", "P(deny|native)",  "P(deny|asian)", "P(deny|white)")
+rownames(matrix_p) <- "Value"
+matrix_p
 
 
 ### MODEL INTEREST RATE ###
 # remove NA interest rate
-data_IR <- data_final[!is.na(data_final$interest_rate),]
+#data_IR <- data_final[!is.na(data_final$interest_rate),]
 
-X4 <- model.matrix(~ derived_race + applicant_age + income + loan_amount 
-               + loan_purpose + loan_term + property_value + applicant_age, data = data_IR)
+#X4 <- model.matrix(~ derived_race + applicant_age + income + loan_amount 
+              # + loan_purpose + loan_term + property_value + applicant_age, data = data_IR)
 
-model_4 <- lm(interest_rate ~ X4, data = data_IR)
-summary(model_4)
+#model_4 <- lm(interest_rate ~ X4, data = data_IR)
+#summary(model_4)
 
 
