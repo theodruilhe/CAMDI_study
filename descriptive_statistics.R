@@ -109,3 +109,5 @@ barplot(table(data_final$applicant_age))
 ## SAME SEX APPLICATION
 table(data_final$same_sex)
 barplot(table(data_final$same_sex))
+
+
