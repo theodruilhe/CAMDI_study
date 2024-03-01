@@ -54,6 +54,7 @@ model_vif <- glm(deny ~ derived_race + loan_purpose + loan_amount + loan_term +
                       property_value + income + applicant_credit_score_type +
                       applicant_sex + applicant_age + same_sex, data = data_final, family = "binomial")
 summary(model_vif)
+
 # Calculate VIFs for all explanatory variables
 vif_result <- vif(model_vif)
 print(vif_result)
@@ -62,7 +63,7 @@ print(vif_result)
 ### Model 1 ###
 # Explain the deny by the discriminatory variable 
 # deny = Beta_0 + Beta_1*race + Beta_2*sex + Beta_3*age + Beta_4*same_sex
-X1 <- model.matrix(~ derived_race + applicant_sex + applicant_age + same_sex, data = data_final)
+X1 <- model.matrix(~ derived_race + applicant_sex + same_sex, data = data_final)
 model_1 <- glm(deny ~ X1, data = data_final, family = "binomial")
 coef_1 <- coefficients(model_1)
 summary(model_1)
@@ -81,7 +82,7 @@ summary(model_2)
 ### Model 3 ###
 # Add some control variables
 X3 <- model.matrix(~ derived_race + applicant_age + income + loan_amount 
-                   + loan_purpose + loan_term + property_value, data = data_final)
+                   + loan_purpose + loan_term + property_value + applicant_sex + same_sex, data = data_final)
 
 model_3 <- glm(deny ~ X3, data = data_final, family = "binomial")
 summary(model_3)
@@ -93,16 +94,16 @@ coef_3
 ### INTERPRETATION OF RESULTS ###
 xasian <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), 
             mean(data_final$loan_amount), 0, 0, 0, 0, 
-            mean(data_final$loan_term),mean(data_final$property_value))
+            mean(data_final$loan_term),mean(data_final$property_value), 1, 0)
 xblack <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income),
             mean(data_final$loan_amount), 0, 0, 0, 0, 
-            mean(data_final$loan_term),mean(data_final$property_value))
+            mean(data_final$loan_term),mean(data_final$property_value),  1, 0)
 xnative <- c(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, mean(data_final$income), 
              mean(data_final$loan_amount), 0, 0, 0, 0,
-             mean(data_final$loan_term),mean(data_final$property_value))
+             mean(data_final$loan_term),mean(data_final$property_value),  1, 0)
 xwhite <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), 
             mean(data_final$loan_amount), 0, 0, 0, 0, 
-            mean(data_final$loan_term),mean(data_final$property_value))
+            mean(data_final$loan_term),mean(data_final$property_value), 1, 0)
 
 p_black <- exp(coef_3 %*% xblack) / (1 + exp(coef_3 %*% xblack)) # Probability of being deny for the black people
 p_native <- exp(coef_3 %*% xnative) / (1 + exp(coef_3 %*% xnative)) # Probability of being deny for the native people
@@ -120,6 +121,37 @@ colnames(matrix_p)<- c("P(deny|black)", "P(deny|native)",  "P(deny|asian)", "P(d
 rownames(matrix_p) <- "Value"
 matrix_p
 
+
+### Effect of beign a women
+
+x_white_women <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), 
+            mean(data_final$loan_amount), 0, 0, 0, 0, 
+            mean(data_final$loan_term),mean(data_final$property_value), 2, 0)
+x_black_women <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), 
+                   mean(data_final$loan_amount), 0, 0, 0, 0, 
+                   mean(data_final$loan_term),mean(data_final$property_value), 2, 0)
+x_white_men <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income),
+            mean(data_final$loan_amount), 0, 0, 0, 0, 
+            mean(data_final$loan_term),mean(data_final$property_value),  1, 0)
+x_black_men <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income),
+                 mean(data_final$loan_amount), 0, 0, 0, 0, 
+                 mean(data_final$loan_term),mean(data_final$property_value),  1, 0)
+
+p_white_women <- exp(coef_3 %*% x_white_women) / (1 + exp(coef_3 %*% x_white_women)) # Probability of being deny for the black people
+p_white_men <- exp(coef_3 %*% x_white_men) / (1 + exp(coef_3 %*% x_white_men)) # Probability of being deny for the native people
+p_black_women <- exp(coef_3 %*% x_black_women) / (1 + exp(coef_3 %*% x_black_women)) # Probability of being deny for the black people
+p_black_men <- exp(coef_3 %*% x_black_men) / (1 + exp(coef_3 %*% x_black_men)) # Probability of being deny for the native people
+
+
+p_white_men
+p_white_women
+p_black_men
+p_black_women
+
+matrix_p_race_sex <- matrix(c(p_black_men, p_black_women, p_white_women, p_white_men), nrow = 1)
+colnames(matrix_p_race_sex)<- c("P(deny|black, men)", "P(deny|black, women)",  "P(deny|white, women)", "P(deny|white, men)")
+rownames(matrix_p_race_sex) <- "Value"
+matrix_p_race_sex
 
 ### MODEL INTEREST RATE ###
 # remove NA interest rate
