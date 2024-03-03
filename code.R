@@ -1,4 +1,4 @@
-sink(log_file.txt)
+# sink(log_file.txt)
 # LIBRAIRIES IMPORTATION
 library(dplyr)
 library(glm2)
@@ -18,8 +18,7 @@ data_temp <- data
 
 # Here we just delete the column that we are not interested in, we end up with 35 columns
 data_temp <- data_temp[, !(names(data_temp) %in% c('derived_msa.md','lei','county_code','activity_year', 'state_code','census_tract', 'derived_loan_product_type', 'derived_sex',
-                                                   'derived_dwelling_category', 'derived_ethnicity', 'purchaser_type',
-                                                   'preapproval', 'reverse_mortgage', 'rate_spread', 'hoepa_status',
+                                                   'derived_dwelling_category', 'derived_ethnicity', 'purchaser_type','preapproval', 'reverse_mortgage', 'rate_spread', 'hoepa_status',
                                                    'total_loan_costs', 'total_points_and_fees', 'origination_charges',
                                                    'discount_points', 'prepayment_penalty_term', 'lender_credits', 'other_nonamortizing_features',
                                                    'manufactured_home_secured_property_type', 'manufactured_home_land_property_interest',
@@ -306,26 +305,17 @@ print(vif_result)
 ### Model 1 ###
 # Explain the deny by the discriminatory variable 
 # deny = Beta_0 + Beta_1*race + Beta_2*sex + Beta_3*age + Beta_4*same_sex
-X1 <- model.matrix(~ derived_race + applicant_sex + applicant_age + same_sex, data = data_final)
+X1 <- model.matrix(~ derived_race + applicant_sex + same_sex, data = data_final)
 model_1 <- glm(deny ~ X1, data = data_final, family = "binomial")
 coef_1 <- coefficients(model_1)
 summary(model_1)
 # we can see that the variable "applicant_sex" and "same_sex" are not significant then we will remove it from the model
 
 
-### Model 2 ###
-# Add some control variables
-X2 <- model.matrix(~ derived_race + applicant_age + income, data = data_final)
-model_2 <- glm(deny ~ X2, data = data_final, family = "binomial")
-coef_2 <- coefficients(model_2)
-summary(model_2)
-# we can see that the variable "income" is significant and it obvious that it explain the deny, then we will keep it in the model
-
-
 ### Model 3 ###
 # Add some control variables
 X3 <- model.matrix(~ derived_race + applicant_age + income + loan_amount 
-                   + loan_purpose + loan_term + property_value, data = data_final)
+                   + loan_purpose + loan_term + property_value + applicant_sex + same_sex, data = data_final)
 
 model_3 <- glm(deny ~ X3, data = data_final, family = "binomial")
 summary(model_3)
@@ -341,30 +331,41 @@ data_final$property_value_2 <- data_final$property_value^2
 
 X4 <- model.matrix(~ derived_race + applicant_age + income + income_2 + loan_amount 
                    + loan_amount_2 + loan_purpose + loan_term  + property_value
-                   + property_value_2, data = data_final)
+                   + property_value_2 + applicant_sex + same_sex, data = data_final)
 
 model_4 <- glm(deny ~ X4, data = data_final, family = "binomial")
 summary(model_4)
 coef_4 <- coefficients(model_4)
-coef_4 <- coef_3[!is.na(coef_4)]
-# Calculate VIFs for all explanatory variables
-vif_model_4 <- vif(model_4)
-print(vif_model_4)
+coef_4 <- coef_4[!is.na(coef_4)]
+
+#### Model 5 ####
+# Add the log of quantivative variables
+data_final$log_income <- log(data_final$income)
+data_final$log_loan_amount <- log(data_final$loan_amount)
+data_final$log_property_value <- log(data_final$property_value)
+
+X5 <- model.matrix(~ derived_race + applicant_age + log_income + log_loan_amount 
+                   + loan_purpose + loan_term  + log_property_value + applicant_sex + same_sex, data = data_final)
+
+model_5 <- glm(deny ~ X4, data = data_final, family = "binomial")
+summary(model_5)
+coef_5 <- coefficients(model_5)
+coef_5 <- coef_5[!is.na(coef_5)]
 
 
 ### INTERPRETATION OF RESULTS ###
 xasian <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), 
             mean(data_final$loan_amount), 0, 0, 0, 0, 
-            mean(data_final$loan_term),mean(data_final$property_value))
+            mean(data_final$loan_term),mean(data_final$property_value), 1, 0)
 xblack <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income),
             mean(data_final$loan_amount), 0, 0, 0, 0, 
-            mean(data_final$loan_term),mean(data_final$property_value))
+            mean(data_final$loan_term),mean(data_final$property_value),  1, 0)
 xnative <- c(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, mean(data_final$income), 
              mean(data_final$loan_amount), 0, 0, 0, 0,
-             mean(data_final$loan_term),mean(data_final$property_value))
+             mean(data_final$loan_term),mean(data_final$property_value),  1, 0)
 xwhite <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), 
             mean(data_final$loan_amount), 0, 0, 0, 0, 
-            mean(data_final$loan_term),mean(data_final$property_value))
+            mean(data_final$loan_term),mean(data_final$property_value), 1, 0)
 
 p_black <- exp(coef_3 %*% xblack) / (1 + exp(coef_3 %*% xblack)) # Probability of being deny for the black people
 p_native <- exp(coef_3 %*% xnative) / (1 + exp(coef_3 %*% xnative)) # Probability of being deny for the native people
@@ -382,4 +383,33 @@ colnames(matrix_p)<- c("P(deny|black)", "P(deny|native)",  "P(deny|asian)", "P(d
 rownames(matrix_p) <- "Value"
 matrix_p
 
-sink()
+## EFFECT OF BEING A WOMAN
+
+x_white_women <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), 
+                   mean(data_final$loan_amount), 0, 0, 0, 0, 
+                   mean(data_final$loan_term),mean(data_final$property_value), 2, 0)
+x_black_women <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), 
+                   mean(data_final$loan_amount), 0, 0, 0, 0, 
+                   mean(data_final$loan_term),mean(data_final$property_value), 2, 0)
+x_white_men <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income),
+                 mean(data_final$loan_amount), 0, 0, 0, 0, 
+                 mean(data_final$loan_term),mean(data_final$property_value),  1, 0)
+x_black_men <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income),
+                 mean(data_final$loan_amount), 0, 0, 0, 0, 
+                 mean(data_final$loan_term),mean(data_final$property_value),  1, 0)
+
+p_white_women <- exp(coef_3 %*% x_white_women) / (1 + exp(coef_3 %*% x_white_women)) # Probability of being deny for the black people
+p_white_men <- exp(coef_3 %*% x_white_men) / (1 + exp(coef_3 %*% x_white_men)) # Probability of being deny for the native people
+p_black_women <- exp(coef_3 %*% x_black_women) / (1 + exp(coef_3 %*% x_black_women)) # Probability of being deny for the black people
+p_black_men <- exp(coef_3 %*% x_black_men) / (1 + exp(coef_3 %*% x_black_men)) # Probability of being deny for the native people
+
+
+p_white_men
+p_white_women
+p_black_men
+p_black_women
+
+matrix_p_race_sex <- matrix(c(p_black_men, p_black_women, p_white_women, p_white_men), nrow = 1)
+colnames(matrix_p_race_sex)<- c("P(deny|black, men)", "P(deny|black, women)",  "P(deny|white, women)", "P(deny|white, men)")
+rownames(matrix_p_race_sex) <- "Value"
+matrix_p_race_sex
