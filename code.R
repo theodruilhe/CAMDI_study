@@ -414,4 +414,8 @@ colnames(matrix_p_race_sex)<- c("P(deny|black, men)", "P(deny|black, women)",  "
 rownames(matrix_p_race_sex) <- "Value"
 matrix_p_race_sex
 
+
+
 ## modification
+
+x = 70
