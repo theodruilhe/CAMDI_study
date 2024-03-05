@@ -413,3 +413,9 @@ matrix_p_race_sex <- matrix(c(p_black_men, p_black_women, p_white_women, p_white
 colnames(matrix_p_race_sex)<- c("P(deny|black, men)", "P(deny|black, women)",  "P(deny|white, women)", "P(deny|white, men)")
 rownames(matrix_p_race_sex) <- "Value"
 matrix_p_race_sex
+
+
+
+## modification
+
+x = 70
