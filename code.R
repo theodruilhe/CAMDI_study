@@ -331,12 +331,12 @@ model_robust <- glm(deny ~ X_robust, data = data_final, family = "binomial")
 summary(model_robust)
 coef_robust <- coefficients(model_robust)
 coef_robust <- coef_robust[!is.na(coef_robust)]
-coef_robust
+
 
 #### ROBUST SQUARE MODEL ####
 X_robust_square <- model.matrix(~ derived_race + applicant_age + income + income_2 + loan_amount 
                    + loan_amount_2 + loan_purpose + loan_term  + property_value
-                   + property_value_2 + applicant_sex + same_sex, data = data_final)
+                   + property_value_2 + applicant_sex, data = data_final)
 
 model_robust_square <- glm(deny ~ X_robust_square, data = data_final, family = "binomial")
 summary(model_robust_square)
@@ -345,7 +345,7 @@ coef_robust_square <- coef_robust_square[!is.na(coef_robust_square)]
 
 #### ROBUST LOG MODEL ####
 X_robust_log <- model.matrix(~ derived_race + applicant_age + log_income + log_loan_amount 
-                   + loan_purpose + loan_term  + log_property_value + applicant_sex + same_sex, data = data_final)
+                   + loan_purpose + loan_term  + log_property_value + applicant_sex, data = data_final)
 
 model_robust_log <- glm(deny ~ X_robust_log, data = data_final, family = "binomial")
 summary(model_robust_log)
@@ -356,51 +356,54 @@ coef_robust_log <- coef_robust_log[!is.na(coef_robust_log)]
 ### INTERPRETATION OF RESULTS ###
 xasian <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), 
             mean(data_final$loan_amount), 0, 0, 0, 0, 
-            mean(data_final$loan_term),mean(data_final$property_value), 1, 0)
+            mean(data_final$loan_term),mean(data_final$property_value), 1)
 
 xasian_square <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), mean(data_final$income_2),
             mean(data_final$loan_amount),mean(data_final$loan_amount_2),  0, 0, 0, 0, 
-            mean(data_final$loan_term), mean(data_final$property_value), mean(data_final$property_value_2), 1, 0)
+            mean(data_final$loan_term), mean(data_final$property_value), mean(data_final$property_value_2), 1)
 
-xasian_log <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$log_income), 
-          mean(data_final$log_loan_amount), 0, 0, 0, 0, 
-          mean(data_final$loan_term),mean(data_final$log_property_value), 1, 0)
+xasian_log <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, log(mean(data_final$income)), 
+          log(mean(data_final$loan_amount)), 0, 0, 0, 0, 
+          mean(data_final$loan_term), log(mean(data_final$property_value)), 1)
 
 xblack <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income),
             mean(data_final$loan_amount), 0, 0, 0, 0, 
-            mean(data_final$loan_term),mean(data_final$property_value),  1, 0)
+            mean(data_final$loan_term),mean(data_final$property_value),  1)
 
 xblack_square <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), mean(data_final$income_2),
             mean(data_final$loan_amount), mean(data_final$loan_amount_2), 0, 0, 0, 0, 
-            mean(data_final$loan_term),mean(data_final$property_value), mean(data_final$property_value_2), 1, 0)
+            mean(data_final$loan_term),mean(data_final$property_value), mean(data_final$property_value_2), 1)
 
-xblack_log <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, mean(data_final$log_income),
-            mean(data_final$log_loan_amount), 0, 0, 0, 0, 
-            mean(data_final$loan_term),mean(data_final$log_property_value),  1, 0)
+xblack_log <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, log(mean(data_final$income)),
+            log(mean(data_final$loan_amount)), 0, 0, 0, 0, 
+            mean(data_final$loan_term),log(mean(data_final$property_value)),  1)
 
 xnative <- c(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, mean(data_final$income), 
              mean(data_final$loan_amount), 0, 0, 0, 0,
-             mean(data_final$loan_term),mean(data_final$property_value),  1, 0)
+             mean(data_final$loan_term),mean(data_final$property_value),  1)
 
-xnative_square <- c(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, mean(data_final$income_2), 
-             mean(data_final$loan_amount_2), 0, 0, 0, 0,
-             mean(data_final$loan_term),mean(data_final$property_value_2), 1, 0)
+xnative_square <- c(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, mean(data_final$income), mean(data_final$income_2), 
+             mean(data_final$loan_amount_2), mean(data_final$loan_amount_2), 0, 0, 0, 0,
+             mean(data_final$loan_term),mean(data_final$property_value),mean(data_final$property_value_2), 1)
 
-xnative_log <- c(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, mean(data_final$log_income), 
-              mean(data_final$log_loan_amount), 0, 0, 0, 0,
-              mean(data_final$loan_term),mean(data_final$log_property_value),  1, 0)
+xnative_log <- c(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, log(mean(data_final$log_income)), 
+              log(mean(data_final$loan_amount)), 0, 0, 0, 0,
+              mean(data_final$loan_term), log(mean(data_final$property_value)),  1)
 
 xwhite <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), 
             mean(data_final$loan_amount), 0, 0, 0, 0, 
-            mean(data_final$loan_term),mean(data_final$property_value), 1, 0)
+            mean(data_final$loan_term),mean(data_final$property_value), 1)
 
 xwhite_square <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), mean(data_final$income_2), 
-            mean(data_final$loan_amount), 0, 0, 0, 0, 
-            mean(data_final$loan_term),mean(data_final$property_value), 1, 0)
+            mean(data_final$loan_amount), mean(data_final$loan_amount_2), 0, 0, 0, 0, 
+            mean(data_final$loan_term),mean(data_final$property_value), mean(data_final$property_value_2), 1)
 
-xwhite_log <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$log_income), 
-            mean(data_final$log_loan_amount), 0, 0, 0, 0, 
-            mean(data_final$loan_term),mean(data_final$log_property_value), 1, 0)
+xwhite_log <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, log(mean(data_final$income)), 
+            log(mean(data_final$loan_amount)), 0, 0, 0, 0, 
+            mean(data_final$loan_term),log(mean(data_final$property_value)), 1)
+
+coef_robust_square
+xblack
 
 p_black <- exp(coef_robust %*% xblack) / (1 + exp(coef_robust %*% xblack)) # Probability of being deny for the black people
 p_black_square <- exp(coef_robust_square %*% xblack_square) / (1 + exp(coef_robust_square %*% xblack_square)) # Probability of being deny for the black people
@@ -462,7 +465,7 @@ x_black_women <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, mean(data_final$log_income),
                    mean(data_final$log_loan_amount), 0, 0, 0, 0, 
                    mean(data_final$loan_term),mean(data_final$log_property_value), 2, 0)
 
-x_white_men <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$log_income),
+x_white_men <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income),
                  mean(data_final$log_loan_amount), 0, 0, 0, 0, 
                  mean(data_final$loan_term),mean(data_final$log_property_value), 1, 0)
 
@@ -475,7 +478,6 @@ p_white_men <- exp(coef_log %*% x_white_men) / (1 + exp(coef_log %*% x_white_men
 p_black_women <- exp(coef_log %*% x_black_women) / (1 + exp(coef_log %*% x_black_women)) # Probability of being deny for the black people
 p_black_men <- exp(coef_log %*% x_black_men) / (1 + exp(coef_log %*% x_black_men)) # Probability of being deny for the native people
 
-
 p_white_men
 p_white_women
 p_black_men
@@ -485,3 +487,4 @@ matrix_p_race_sex <- matrix(c(p_black_men, p_black_women, p_white_women, p_white
 colnames(matrix_p_race_sex)<- c("P(deny|black, men)", "P(deny|black, women)",  "P(deny|white, women)", "P(deny|white, men)")
 rownames(matrix_p_race_sex) <- "Value"
 matrix_p_race_sex
+
