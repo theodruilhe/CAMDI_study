@@ -5,6 +5,9 @@ library(glm2)
 library(viridis)
 library(fastDummies)
 library(car)
+library(ggplot2)
+library(maps)
+library(dplyr)
 
 #### DATA CLEANING ####
 
@@ -316,7 +319,7 @@ print(vif_result)
 # Explain the deny by the discriminatory variable 
 # deny = Beta_0 + Beta_1*race + Beta_2*sex + Beta_3*age
 X_naive <- model.matrix(~ derived_race + applicant_sex , data = data_final)
-model_naive <- glm(deny ~ X1, data = data_final, family = "binomial")
+model_naive <- glm(deny ~ X_naive, data = data_final, family = "binomial")
 coef_naive <- coefficients(model_naive)
 summary(model_naive)
 # we can see that the variable "applicant_sex" and "same_sex" are not significant then we will remove it from the model
@@ -354,56 +357,54 @@ coef_robust_log <- coef_robust_log[!is.na(coef_robust_log)]
 
 
 ### INTERPRETATION OF RESULTS ###
-xasian <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), 
-            mean(data_final$loan_amount), 0, 0, 0, 0, 
-            mean(data_final$loan_term),mean(data_final$property_value), 1)
+xasian <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, median(data_final$income), 
+            median(data_final$loan_amount), 0, 0, 0, 0, 
+            median(data_final$loan_term),median(data_final$property_value), 1)
 
-xasian_square <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), mean(data_final$income_2),
-            mean(data_final$loan_amount),mean(data_final$loan_amount_2),  0, 0, 0, 0, 
-            mean(data_final$loan_term), mean(data_final$property_value), mean(data_final$property_value_2), 1)
+xasian_square <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, median(data_final$income), median(data_final$income_2),
+            median(data_final$loan_amount),median(data_final$loan_amount_2),  0, 0, 0, 0, 
+            median(data_final$loan_term), median(data_final$property_value), median(data_final$property_value_2), 1)
 
-xasian_log <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, log(mean(data_final$income)), 
-          log(mean(data_final$loan_amount)), 0, 0, 0, 0, 
-          mean(data_final$loan_term), log(mean(data_final$property_value)), 1)
+xasian_log <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, log(median(data_final$income)), 
+          log(median(data_final$loan_amount)), 0, 0, 0, 0, 
+          median(data_final$loan_term), log(median(data_final$property_value)), 1)
 
-xblack <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income),
-            mean(data_final$loan_amount), 0, 0, 0, 0, 
-            mean(data_final$loan_term),mean(data_final$property_value),  1)
+xblack <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, median(data_final$income),
+            median(data_final$loan_amount), 0, 0, 0, 0, 
+            median(data_final$loan_term),median(data_final$property_value),  1)
 
-xblack_square <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), mean(data_final$income_2),
-            mean(data_final$loan_amount), mean(data_final$loan_amount_2), 0, 0, 0, 0, 
-            mean(data_final$loan_term),mean(data_final$property_value), mean(data_final$property_value_2), 1)
+xblack_square <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, median(data_final$income), median(data_final$income_2),
+            median(data_final$loan_amount), median(data_final$loan_amount_2), 0, 0, 0, 0, 
+            median(data_final$loan_term),median(data_final$property_value), median(data_final$property_value_2), 1)
 
-xblack_log <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, log(mean(data_final$income)),
-            log(mean(data_final$loan_amount)), 0, 0, 0, 0, 
-            mean(data_final$loan_term),log(mean(data_final$property_value)),  1)
+xblack_log <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, log(median(data_final$income)),
+            log(median(data_final$loan_amount)), 0, 0, 0, 0, 
+            median(data_final$loan_term),log(median(data_final$property_value)),  1)
 
-xnative <- c(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, mean(data_final$income), 
-             mean(data_final$loan_amount), 0, 0, 0, 0,
-             mean(data_final$loan_term),mean(data_final$property_value),  1)
+xnative <- c(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, median(data_final$income), 
+             median(data_final$loan_amount), 0, 0, 0, 0,
+             median(data_final$loan_term), median(data_final$property_value),  1)
 
-xnative_square <- c(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, mean(data_final$income), mean(data_final$income_2), 
-             mean(data_final$loan_amount_2), mean(data_final$loan_amount_2), 0, 0, 0, 0,
-             mean(data_final$loan_term),mean(data_final$property_value),mean(data_final$property_value_2), 1)
+xnative_square <- c(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, median(data_final$income), median(data_final$income_2), 
+             median(data_final$loan_amount_2), median(data_final$loan_amount_2), 0, 0, 0, 0,
+             median(data_final$loan_term),median(data_final$property_value),median(data_final$property_value_2), 1)
 
-xnative_log <- c(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, log(mean(data_final$log_income)), 
-              log(mean(data_final$loan_amount)), 0, 0, 0, 0,
-              mean(data_final$loan_term), log(mean(data_final$property_value)),  1)
+xnative_log <- c(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, log(median(data_final$log_income)), 
+              log(median(data_final$loan_amount)), 0, 0, 0, 0,
+              median(data_final$loan_term), log(median(data_final$property_value)),  1)
 
-xwhite <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), 
-            mean(data_final$loan_amount), 0, 0, 0, 0, 
-            mean(data_final$loan_term),mean(data_final$property_value), 1)
+xwhite <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, median(data_final$income), 
+            median(data_final$loan_amount), 0, 0, 0, 0, 
+            median(data_final$loan_term),median(data_final$property_value), 1)
 
-xwhite_square <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income), mean(data_final$income_2), 
-            mean(data_final$loan_amount), mean(data_final$loan_amount_2), 0, 0, 0, 0, 
-            mean(data_final$loan_term),mean(data_final$property_value), mean(data_final$property_value_2), 1)
+xwhite_square <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, median(data_final$income), median(data_final$income_2), 
+            median(data_final$loan_amount), median(data_final$loan_amount_2), 0, 0, 0, 0, 
+            median(data_final$loan_term), median(data_final$property_value), median(data_final$property_value_2), 1)
 
-xwhite_log <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, log(mean(data_final$income)), 
-            log(mean(data_final$loan_amount)), 0, 0, 0, 0, 
-            mean(data_final$loan_term),log(mean(data_final$property_value)), 1)
+xwhite_log <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, log(median(data_final$income)), 
+            log(median(data_final$loan_amount)), 0, 0, 0, 0, 
+            median(data_final$loan_term),log(median(data_final$property_value)), 1)
 
-coef_robust_square
-xblack
 
 p_black <- exp(coef_robust %*% xblack) / (1 + exp(coef_robust %*% xblack)) # Probability of being deny for the black people
 p_black_square <- exp(coef_robust_square %*% xblack_square) / (1 + exp(coef_robust_square %*% xblack_square)) # Probability of being deny for the black people
@@ -431,12 +432,11 @@ p_native_log
 
 p_white
 p_white_square
-p_white_log
+p_black_log/p_white_log
 
 p_asian
 p_asian_square
 p_asian_log
-
 
 matrix_p <- matrix(c(p_black, p_native, p_asian, p_white), nrow = 1)
 colnames(matrix_p)<- c("P(deny|black)", "P(deny|native)",  "P(deny|asian)", "P(deny|white)")
@@ -454,37 +454,55 @@ matrix_p
 matrix_p_square
 matrix_p_log
 
-
+coef_robust
+xblack
+# for a home purchase, loan amount = 145,000, income, 76,000; age between 35-44, 
+# property value 255,000, loan term 360 months
 ## EFFECT OF BEING A WOMAN
 
-x_white_women <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$log_income), 
-                   mean(data_final$log_loan_amount), 0, 0, 0, 0, 
-                   mean(data_final$loan_term),mean(data_final$log_property_value), 2, 0)
+x_white_women <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, log(median(data_final$income)),
+                   log(median(data_final$loan_amount)), 0, 0, 0, 0, 
+                   median(data_final$loan_term),log(median(data_final$property_value)),  2)
 
-x_black_women <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, mean(data_final$log_income), 
-                   mean(data_final$log_loan_amount), 0, 0, 0, 0, 
-                   mean(data_final$loan_term),mean(data_final$log_property_value), 2, 0)
+x_black_women <-c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, log(median(data_final$income)),
+                  log(median(data_final$loan_amount)), 0, 0, 0, 0, 
+                  median(data_final$loan_term),log(median(data_final$property_value)),  2)
 
-x_white_men <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, mean(data_final$income),
-                 mean(data_final$log_loan_amount), 0, 0, 0, 0, 
-                 mean(data_final$loan_term),mean(data_final$log_property_value), 1, 0)
 
-x_black_men <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, mean(data_final$log_income),
-                 mean(data_final$log_loan_amount), 0, 0, 0, 0, 
-                 mean(data_final$loan_term),mean(data_final$log_property_value), 1, 0)
+x_white_men <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, log(median(data_final$income)),
+                 log(median(data_final$loan_amount)), 0, 0, 0, 0, 
+                 median(data_final$loan_term),log(median(data_final$property_value)),  1)
 
-p_white_women <- exp(coef_log %*% x_white_women) / (1 + exp(coef_log %*% x_white_women)) # Probability of being deny for the black people
-p_white_men <- exp(coef_log %*% x_white_men) / (1 + exp(coef_log %*% x_white_men)) # Probability of being deny for the native people
-p_black_women <- exp(coef_log %*% x_black_women) / (1 + exp(coef_log %*% x_black_women)) # Probability of being deny for the black people
-p_black_men <- exp(coef_log %*% x_black_men) / (1 + exp(coef_log %*% x_black_men)) # Probability of being deny for the native people
+x_black_men <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, log(median(data_final$income)),
+               log(median(data_final$loan_amount)), 0, 0, 0, 0, 
+               median(data_final$loan_term),log(median(data_final$property_value)),  1)
+
+
+p_white_women <- exp(coef_robust_log %*% x_white_women) / (1 + exp(coef_robust_log %*% x_white_women)) # Probability of being deny for the black people
+p_white_men <- exp(coef_robust_log %*% x_white_men) / (1 + exp(coef_robust_log %*% x_white_men)) # Probability of being deny for the native people
+p_black_women <- exp(coef_robust_log %*% x_black_women) / (1 + exp(coef_robust_log %*% x_black_women)) # Probability of being deny for the black people
+p_black_men <- exp(coef_robust_log %*% x_black_men) / (1 + exp(coef_robust_log %*% x_black_men)) # Probability of being deny for the native people
 
 p_white_men
 p_white_women
 p_black_men
 p_black_women
 
-matrix_p_race_sex <- matrix(c(p_black_men, p_black_women, p_white_women, p_white_men), nrow = 1)
-colnames(matrix_p_race_sex)<- c("P(deny|black, men)", "P(deny|black, women)",  "P(deny|white, women)", "P(deny|white, men)")
-rownames(matrix_p_race_sex) <- "Value"
-matrix_p_race_sex
+### USA ###
+# Obtenir la carte des états des États-Unis
+us_states_map <- map_data("state")
+
+# Lire les valeurs depuis le fichier CSV, en spécifiant le séparateur correct
+final_values <- read.csv("final_value.csv", sep = ";")
+
+# Fusionner les données géographiques avec les valeurs du CSV
+us_states_map <- merge(us_states_map, final_values, by = "region")
+
+ggplot(data = us_states_map, aes(x = long, y = lat, group = group, fill = value)) +
+  geom_polygon(color = "white") +
+  scale_fill_gradient(low = "white", high = "red", limits = c(1, max(final_values$value))) +
+  theme_void() +
+  coord_fixed(1.3) +
+  labs(fill = "Votre titre de légende") +
+  guides(fill = guide_colorbar(title = "Ratio"))
 
