@@ -196,3 +196,24 @@ p_white_log <- exp(coef_robust_log %*% xwhite_log) / (1 + exp(coef_robust_log %*
 
 ratio <- p_black_log/p_white_log
 ratio
+# Charger les packages nécessaires
+library(ggplot2)
+library(maps)
+library(dplyr)
+
+# Lire les données depuis 'final_values.csv'
+# Assurez-vous que le chemin d'accès au fichier est correct
+
+# Obtenir la carte des états des États-Unis
+us_states_map <- map_data("state")
+
+# Fusionner les données géographiques avec les valeurs du CSV
+us_states_map <- merge(us_states_map, final_value, by.x = "value", by.y = "region", all.x = TRUE)
+
+# Créer la carte
+ggplot(data = us_states_map, aes(x = long, y = lat, group = group, fill = value)) +
+  geom_polygon(color = "white") +
+  scale_fill_gradient(low = "white", high = "red", limits = c(0, 3)) +
+  theme_void() +
+  labs(title = "Carte des États-Unis avec valeurs depuis CSV", fill = "Valeur") +
+  coord_fixed(1.3)
