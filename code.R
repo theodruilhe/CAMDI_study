@@ -8,6 +8,7 @@ library(car)
 library(ggplot2)
 library(maps)
 library(dplyr)
+library(margins)
 
 #### DATA CLEANING ####
 
@@ -352,8 +353,13 @@ X_robust_log <- model.matrix(~ derived_race + applicant_age + log_income + log_l
 
 model_robust_log <- glm(deny ~ X_robust_log, data = data_final, family = "binomial")
 summary(model_robust_log)
+model_robust_log_2 <- glm(deny ~ derived_race + applicant_age + log_income + log_loan_amount 
+                      + loan_purpose + loan_term  + log_property_value + applicant_sex,
+                        data = data_final, family = "binomial")
+
+margins <- margins(model_robust_log_2)
+
 coef_robust_log <- coefficients(model_robust_log)
-coef_robust_log <- coef_robust_log[!is.na(coef_robust_log)]
 
 
 ### INTERPRETATION OF RESULTS ###
