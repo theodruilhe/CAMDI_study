@@ -61,7 +61,7 @@ data_temp <- data_temp[, !(names(data_temp) %in% c('derived_msa.md','lei','count
                                                    'applicant_race_observed', 'applicant_sex_observed', 'co.applicant_sex_observed', 'applicant_age_above_62',
                                                    'co.applicant_age_above_62', 'submission_of_application', 'initially_payable_to_institution', 'aus.3',
                                                    'aus.4', 'aus.5', 'denial_reason.1', 'denial_reason.2', 'denial_reason.3', 'denial_reason.4',"conforming_loan_limit", 'lien_status', 'open.end_line_of_credit',
-                                                   'intro_rate_period', 'loan_type'
+                                                   'intro_rate_period', 'loan_type', 'construction_method', 'co.applicant_sex'
 ))]
 
 
@@ -86,29 +86,11 @@ data_temp <- data_temp %>%
   mutate(deny = ifelse(action_taken == 3, 1, 0))
 
 
-## CONSTRUCTION METHOD
-# recoding 2,1 to 1,0 for construction_method (because it is more simple to have a dummy)
-data_temp$construction_method <- ifelse(data_temp$construction_method == 2, 1,
-                                        ifelse(data_temp$construction_method == 1, 0,
-                                               data_temp$construction_method))
-
-
 ## SEX, we only keep the two possibility 'Men' and 'Women' because there is some application
 # where the information is not given
 # 1 = Male, 2 = Female
 data_temp <- data_temp %>%
   filter(applicant_sex %in% c(1, 2))
-
-
-## SAME_SEX
-# we create this variable to see if the applicant and the co-applicant are of the same sex
-# maybe we could see if there is some discrimination for same sex applications
-# we only keep 1 - 'Male', 2 - 'Female' and 5 - 'No Co-Applicant'
-data_temp <- data_temp %>%
-  filter(co.applicant_sex %in% c(1, 2, 5))
-# we check if 'applicant_sex' = co.applicant_sex, if yes, same_sex = 1, else same_sex = 0
-data_temp <- data_temp %>%
-  mutate(same_sex = ifelse(applicant_sex == co.applicant_sex, 1, 0))
 
 
 ## RACE
@@ -181,9 +163,8 @@ data_temp <- subset(data_temp, income > 0)
 
 # We only keep the variable of interest
 data_final <- data_temp[, (names(data_temp) %in%  c("deny", "derived_race", "loan_purpose", "loan_amount", 
-                                                    "loan_to_value_ratio", "interest_rate", "loan_term",
-                                                    "property_value", "income", "applicant_credit_score_type",
-                                                    "applicant_sex", "applicant_age", "same_sex"))]
+                                                    "loan_to_value_ratio", "loan_term", "property_value",
+                                                    "income", "applicant_sex", "applicant_age"))]
 
 # We export the CSV, so it will be importable on 'model.R' and 'descriptive_statistics.R' files.
 # Export data to csv
@@ -273,13 +254,6 @@ hist(data_final$income, breaks = 50, probability = TRUE,
 lines(density(data_final$income), col = "blue", lwd = 2)
 
 
-## APPLICANT CREDIT SCORE TYPE
-#The name and version of the credit scoring model used to generate the credit score, or scores relied on in making the credit decision
-table(data_final$applicant_credit_score_type)
-barplot(table(data_final$applicant_credit_score_type))
-# 11 different credit scoring model
-
-
 ## APPLICANT SEX
 # 1: Male
 # 2: Female
@@ -291,11 +265,6 @@ barplot(table(data_final$applicant_sex))
 table(data_final$applicant_age)
 barplot(table(data_final$applicant_age))
 
-
-## SAME SEX APPLICATION
-table(data_final$same_sex)
-barplot(table(data_final$same_sex))
-
 #######################################
 #              MODEL                  #
 #######################################
@@ -305,20 +274,16 @@ barplot(table(data_final$same_sex))
 # We convert them as factor to be used in the models.
 data_final$derived_race <- as.factor(data_final$derived_race)
 data_final$loan_purpose <- as.factor(data_final$loan_purpose)
-data_final$applicant_credit_score_type <- as.factor(data_final$applicant_credit_score_type)
 data_final$applicant_age <- as.factor(data_final$applicant_age)
 data_final$deny <- as.factor(data_final$deny)
 data_final$applicant_sex <- as.factor(data_final$applicant_sex)
-data_final$same_sex <- as.factor(data_final$same_sex)
 
 # The levels of a factor are re-ordered so that the level specified by ref is first and the others are moved down.
 data_final$derived_race <- relevel(data_final$derived_race, ref = "White")
 data_final$loan_purpose <- relevel(data_final$loan_purpose, ref = "1")
-data_final$applicant_credit_score_type <- relevel(data_final$applicant_credit_score_type, ref = "1")
 data_final$applicant_sex <- relevel(data_final$applicant_sex, ref = "1")
 data_final$applicant_age <- relevel(data_final$applicant_age, ref = "35-44")
 data_final$deny <- relevel(data_final$deny, ref = "0")
-data_final$same_sex <- relevel(data_final$same_sex, ref = "0")
 
 # QUANTITATIVE VARIABLES MANIPULATION
 data_final$loan_amount <- as.numeric(data_final$loan_amount)
@@ -352,13 +317,14 @@ cor.test(data_final$income,data_final$property_value) # significant correlation 
 
 # put all the explanatory variables together
 model_vif <- glm(deny ~ derived_race + loan_purpose + log_loan_amount + loan_term + 
-                   log_property_value + log_income + applicant_credit_score_type +
-                   applicant_sex + applicant_age + same_sex, data = data_final, family = "binomial")
+                   log_property_value + log_income + applicant_sex + applicant_age, data = data_final, family = "binomial")
 summary(model_vif)
 
 # Calculate VIFs for all explanatory variables
 vif_result <- vif(model_vif)
+
 print(vif_result)
+
 # We do not have multicolinearity as the maximum VIF is 2.702, thus it is not required to deal
 # with multicolinearity to create our models.
 
@@ -388,7 +354,7 @@ test_set <- data_final[-train_indices, ]
 
 # Explain the deny by the discriminatory variable 
 # deny = Beta_0 + Beta_1*race + Beta_2*sex + Beta_3*age + Beta_4*same_sex
-model_1 <- glm(deny ~ derived_race + applicant_sex + same_sex, data = train_set, family = "binomial")
+model_1 <- glm(deny ~ derived_race + applicant_sex, data = train_set, family = "binomial")
 coef_1 <- coefficients(model_1)
 summary(model_1)
 # we can see that the variable "applicant_sex" and "same_sex" are not significant then we will remove it from the model
@@ -397,7 +363,7 @@ summary(model_1)
 
 # Add  control variables
 model_2 <- glm(deny ~ derived_race + applicant_age + log_income + log_loan_amount 
-               + loan_purpose + loan_term  + log_property_value + applicant_sex + same_sex,
+               + loan_purpose + loan_term  + log_property_value + applicant_sex,
                data = train_set,
                family = "binomial")
 summary(model_2)
@@ -445,16 +411,16 @@ summary_me
 
 xasian <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, log(median(test_set$income)), 
             log(median(test_set$loan_amount)), 0, 0, 0, 0, 
-            median(test_set$loan_term), log(median(test_set$property_value)), 1, 0)
+            median(test_set$loan_term), log(median(test_set$property_value)), 1)
 xblack <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, log(median(test_set$income)), 
             log(median(test_set$loan_amount)), 0, 0, 0, 0, 
-            median(test_set$loan_term), log(median(test_set$property_value)), 1, 0)
+            median(test_set$loan_term), log(median(test_set$property_value)), 1)
 xnative <- c(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, log(median(test_set$income)), 
              log(median(test_set$loan_amount)), 0, 0, 0, 0, 
-             median(test_set$loan_term), log(median(test_set$property_value)), 1, 0)
+             median(test_set$loan_term), log(median(test_set$property_value)), 1)
 xwhite <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, log(median(test_set$income)), 
             log(median(test_set$loan_amount)), 0, 0, 0, 0, 
-            median(test_set$loan_term), log(median(test_set$property_value)), 1, 0)
+            median(test_set$loan_term), log(median(test_set$property_value)), 1)
 
 p_black <- exp(coef_2 %*% xblack) / (1 + exp(coef_2 %*% xblack)) # Probability of being deny for the black people
 p_native <- exp(coef_2 %*% xnative) / (1 + exp(coef_2 %*% xnative)) # Probability of being deny for the native people
@@ -484,16 +450,16 @@ matrix_p
 # Here we do the same, but we change both modalities of gender and race.
 x_white_women <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, log(median(test_set$income)), 
                    log(median(test_set$loan_amount)), 0, 0, 0, 0, 
-                   median(test_set$loan_term),log(median(test_set$property_value)), 2, 0)
+                   median(test_set$loan_term),log(median(test_set$property_value)), 2)
 x_black_women <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, log(median(test_set$income)), 
                    log(median(test_set$loan_amount)), 0, 0, 0, 0, 
-                   median(test_set$loan_term),log(median(test_set$property_value)), 2, 0)
+                   median(test_set$loan_term),log(median(test_set$property_value)), 2)
 x_white_men <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0,log(median(test_set$income)), 
                  log(median(test_set$loan_amount)), 0, 0, 0, 0, 
-                 median(test_set$loan_term),log(median(test_set$property_value)),  1, 0)
+                 median(test_set$loan_term),log(median(test_set$property_value)),  1)
 x_black_men <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, log(median(test_set$income)), 
                  log(median(test_set$loan_amount)), 0, 0, 0, 0, 
-                 median(test_set$loan_term),log(median(test_set$property_value)), 1, 0)
+                 median(test_set$loan_term),log(median(test_set$property_value)), 1)
 
 p_white_women <- exp(coef_2 %*% x_white_women) / (1 + exp(coef_2 %*% x_white_women)) # Probability of being deny for the black people
 p_white_men <- exp(coef_2 %*% x_white_men) / (1 + exp(coef_2 %*% x_white_men)) # Probability of being deny for the native people
