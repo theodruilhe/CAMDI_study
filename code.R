@@ -18,19 +18,20 @@
 
 
 # LIBRAIRIES IMPORTATION
-install.packages("dplyr")
+# install.packages("dplyr")
 library(dplyr)
-install.packages('glm2')
+# install.packages('glm2')
 library(glm2)
-install.packages('viridis')
+# install.packages('viridis')
 library(viridis)
-install.packages('car')
+# install.packages('car')
 library(car)
-install.packages('caret')
+# install.packages('caret')
 library(caret)
-install.packages('margins')
+# install.packages('margins')
 library(margins)
-
+# install.packages('stargazer')
+library(stargazer)
 
 #######################################
 #           DATA CLEANING             #
@@ -175,6 +176,65 @@ write.csv(data_final, "data_final.csv", row.names = FALSE)
 #     DESCRIPTIVE STATISTICS          #
 #######################################
 
+##################################################
+#################### REPRESENTATIVNESS ##########
+
+# For our variables of interest, we compare the characteristics of the population vs the sample (proportions, medians)
+# the initial data has sometimes to be cleaned to get rid of NA : we rename it "test" (a subset of "data")
+
+###### Race
+
+prop.table(table(data_final$derived_race))
+
+# removing observations with another ethnicity than the one we will consider
+test <- subset(data, !(derived_race %in% c("2 or more minority races", "Free Form Text Only", "Joint", "Race Not Available")))
+
+prop.table(table(test$derived_race))
+
+###### Sex
+
+test <- subset(data, 
+            !(applicant_sex %in% c(3,4,6)))
+
+prop.table(table(test$applicant_sex))
+
+prop.table(table(data_final$applicant_sex))
+
+###### Loan amount
+
+test <- data
+summary(test$loan_amount)
+summary(data_final$loan_amount)
+
+###### Income
+
+test <- subset(data, is.na(income) != TRUE)
+
+summary(test$income)
+
+summary(data_final$income)
+
+###### Age
+
+test <- subset(data, applicant_age != 8888)
+
+prop.table(table(test$applicant_age))
+
+prop.table(table(data_final$applicant_age))
+
+color_palette <- colorRampPalette(c("skyblue", "blue"))(7)
+
+### to reorganize the categories (">74" years was before "25-34" on the bar plot) we capture manually the percentages and draw a new barplot
+age_groups <- c("<25", "25-34", "35-44", "45-54", "55-64", "65-74", ">74")
+proportions <- c(0.03934274, 0.21150511, 0.22421216, 0.20981369, 0.17215811, 0.10475308, 0.03821512)
+
+barplot(proportions, names.arg = age_groups, xlab = "Age Groups", ylab = "Proportions", col =color_palette)
+
+##################################################
+#################### EXPLORATORY STATISTICS ##########
+
+###### numerical variables 
+stargazer(data_final,digits = 2)
 
 ## TARGET VARIABLE: DENY
 table(data_final$deny)
