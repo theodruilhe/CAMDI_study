@@ -18,11 +18,11 @@
 
 
 ##### SET WORKING DIRECTORY
-sink("log_final.txt")
-setwd("yout path here")
+
+setwd("path/to/your/directory")
 
 
-
+sink("log_file.txt")
 
 # LIBRAIRIES IMPORTATION
 # Function to install and load a package
@@ -177,6 +177,8 @@ prop.table(table(data_final$derived_race))
 test <- subset(data, !(derived_race %in% c("2 or more minority races", "Free Form Text Only", "Joint", "Race Not Available")))
 
 prop.table(table(test$derived_race))
+# for example here, the proportions have not changed so much (asian goes from 0.036452594 to 0.035253925 and
+# white from 0.860843297 to 0.869935590), thus we repeat this analysis on the others variables.
 
 ###### Sex
 
@@ -219,7 +221,7 @@ prop.table(table(data_final$applicant_age))
 ###### LaTeX code for the table of descriptive statistics of numerical variables 
 stargazer(data_final,digits = 2)
 
-## TARGET VARIABLE: DENY
+## BARPLOT OF TARGET VARIABLE: DENY
 table(data_final$deny)
 prop.table(table(data_final$deny))
 barplot(table(data_final$deny))
@@ -263,13 +265,6 @@ barplot(prop.table(table(data_final$loan_purpose))*100,
 ## LOAN AMOUNT
 summary(data_final$loan_amount)
 hist(data_final$loan_amount, breaks = 50,xlab='Loan Amount')
-
-
-## LOAN TO VALUE RATIO
-# ploting histograms
-hist(data_final$loan_to_value_ratio, breaks = 50,xlab='Loan To Value Ratio')
-summary(data_final$loan_to_value_ratio)
-
 
 ## LOAN TERM
 # The number of months after which the legal obligation will mature or terminate, or would have matured or terminated
@@ -362,11 +357,6 @@ data_final$property_value <- as.numeric(data_final$property_value)
 # We set income to be in $ instead of thousands of dollars
 data_final$income <- data_final$income * 1000
 
-# ADD THE SQUARE OF THE QUANTITATIVE VARIABLES
-data_final$income_2 <- data_final$income^2
-data_final$loan_amount_2 <- data_final$loan_amount^2
-data_final$property_value_2 <- data_final$property_value^2
-
 # ADD THE LOG OF THE QUANTITATIVE VARIABLES
 data_final$log_income <- log(data_final$income)
 data_final$log_loan_amount <- log(data_final$loan_amount)
@@ -449,7 +439,6 @@ accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
 # Print the confusion matrix and accuracy
 print(conf_matrix)
 # to have the latex code
-xtable(conf_matrix)
 print(paste("Accuracy:", accuracy))
 # We obtain approximately 83% of accuracy
 
@@ -516,4 +505,3 @@ ggplot(data = us_states_map, aes(x = long, y = lat, group = group, fill = value)
   guides(fill = guide_colorbar(title = "AME"))
 
 sink()
-
