@@ -6,7 +6,7 @@
 #                                                           #
 #############################################################
 #                                                           #
-#         OUR CODE IS COMPOSED OF 3 PART THAT ARE:          #
+#         OUR CODE IS COMPOSED OF 3 PARTS THAT ARE:         #
 #                   1) data_cleaning                        #
 #                   2) descriptive_statistics               #
 #                   3) model                                #
@@ -17,21 +17,29 @@
 ##############################################################
 
 
+##### SET WORKING DIRECTORY
+sink("log_final.txt")
+setwd("yout path here")
+
+
+
+
 # LIBRAIRIES IMPORTATION
-# install.packages("dplyr")
-library(dplyr)
-# install.packages('glm2')
-library(glm2)
-# install.packages('viridis')
-library(viridis)
-# install.packages('car')
-library(car)
-# install.packages('caret')
-library(caret)
-# install.packages('margins')
-library(margins)
-# install.packages('stargazer')
-library(stargazer)
+# Function to install and load a package
+install_load_package <- function(package_name) {
+  if (!requireNamespace(package_name, quietly = TRUE)) {
+    install.packages(package_name)
+  }
+  library(package_name, character.only = TRUE)
+}
+
+# List of packages to install and load
+packages <- c("dplyr", "glm2", "viridis", "car", "caret", "margins", "stargazer")
+
+# Install and load each package from the list
+for (package in packages) {
+  install_load_package(package)
+}
 
 #######################################
 #           DATA CLEANING             #
@@ -43,28 +51,6 @@ data <- read.csv("data_michigan.csv", header = TRUE, sep = ",")
 
 ## Create a data_temp in order to clean the dataset without modifying the original one
 data_temp <- data
-
-#### CLEANING USELESS COLUMNS ON A NEW DATAFRAME 'data_temp' ####
-
-# Here we just delete the column that we are not interested in, we end up with 35 columns
-data_temp <- data_temp[, !(names(data_temp) %in% c('derived_msa.md','lei','county_code','activity_year', 'state_code','census_tract', 'derived_loan_product_type', 'derived_sex',
-                                                   'derived_dwelling_category', 'derived_ethnicity', 'purchaser_type',
-                                                   'preapproval', 'reverse_mortgage', 'rate_spread', 'hoepa_status',
-                                                   'total_loan_costs', 'total_points_and_fees', 'origination_charges',
-                                                   'discount_points', 'prepayment_penalty_term', 'lender_credits', 'other_nonamortizing_features',
-                                                   'manufactured_home_secured_property_type', 'manufactured_home_land_property_interest',
-                                                   'multifamily_affordable_units', 'total_units', 'applicant_ethnicity.1', 'applicant_ethnicity.2',
-                                                   'applicant_ethnicity.3', 'applicant_ethnicity.4', 'applicant_ethnicity.5', 'applicant_race.1',
-                                                   'applicant_race.2', 'applicant_race.3', 'applicant_race.4', 'applicant_race.5', 'co.applicant_ethnicity.1',
-                                                   'co.applicant_ethnicity.2', 'co.applicant_ethnicity.3', 'co.applicant_ethnicity.4', 'co.applicant_ethnicity.5',
-                                                   'co.applicant_race.1', 'co.applicant_race.2', 'co.applicant_race.3', 'co.applicant_race.4', 'co.applicant_race.5',
-                                                   'applicant_ethnicity_observed', 'co.applicant_ethnicity_observed', 'co.applicant_race_observed',
-                                                   'applicant_race_observed', 'applicant_sex_observed', 'co.applicant_sex_observed', 'applicant_age_above_62',
-                                                   'co.applicant_age_above_62', 'submission_of_application', 'initially_payable_to_institution', 'aus.3',
-                                                   'aus.4', 'aus.5', 'denial_reason.1', 'denial_reason.2', 'denial_reason.3', 'denial_reason.4',"conforming_loan_limit", 'lien_status', 'open.end_line_of_credit',
-                                                   'intro_rate_period', 'loan_type', 'construction_method', 'co.applicant_sex'
-))]
-
 
 #### CLEANING LINES ####
 # In this part, we aim to clean the lines of our dataset. It could be by deleting the missing values, 
@@ -97,7 +83,8 @@ data_temp <- data_temp %>%
 ## RACE
 # We now delete race that we are not interested to study, or not given (such as 'Race Not Available)
 data_temp <- subset(data_temp, !derived_race %in% c("Race Not Available", "Joint", "2 or more minority races", "Free Form Text Only"))
-# We gather dervied race to have only 4 categories: White, Black, Asian and Native
+
+# We gather derived race to have only 4 categories: White, Black, Asian and Native
 # Means that we put all the possible values for native together to a simplest categorie called 'Native'
 # Same for 'Black or African American that we call 'Black'
 data_temp$derived_race <- ifelse(data_temp$derived_race %in% c("American Indian or Alaska Native", "Native Hawaiian or Other Pacific Islander"), "Native",
@@ -163,8 +150,8 @@ data_temp <- subset(data_temp, income > 0)
 #### CREATION OF FINAL DATA SET ####
 
 # We only keep the variable of interest
-data_final <- data_temp[, (names(data_temp) %in%  c("deny", "derived_race", "loan_purpose", "loan_amount", 
-                                                    "loan_to_value_ratio", "loan_term", "property_value",
+data_final <- data_temp[, (names(data_temp) %in%  c("deny", "derived_race", "loan_purpose",
+                                                    "loan_amount", "loan_term", "property_value",
                                                     "income", "applicant_sex", "applicant_age"))]
 
 # We export the CSV, so it will be importable on 'model.R' and 'descriptive_statistics.R' files.
@@ -194,7 +181,7 @@ prop.table(table(test$derived_race))
 ###### Sex
 
 test <- subset(data, 
-            !(applicant_sex %in% c(3,4,6)))
+               !(applicant_sex %in% c(3,4,6)))
 
 prop.table(table(test$applicant_sex))
 
@@ -222,18 +209,14 @@ prop.table(table(test$applicant_age))
 
 prop.table(table(data_final$applicant_age))
 
-color_palette <- colorRampPalette(c("skyblue", "blue"))(7)
-
-### to reorganize the categories (">74" years was before "25-34" on the bar plot) we capture manually the percentages and draw a new barplot
-age_groups <- c("<25", "25-34", "35-44", "45-54", "55-64", "65-74", ">74")
-proportions <- c(0.03934274, 0.21150511, 0.22421216, 0.20981369, 0.17215811, 0.10475308, 0.03821512)
-
-barplot(proportions, names.arg = age_groups, xlab = "Age Groups", ylab = "Proportions", col =color_palette)
-
 ##################################################
 #################### EXPLORATORY STATISTICS ##########
 
-###### numerical variables 
+## We will here display some statistics of our variables in the final dataset.
+
+#### UNIVARIATE STATISTICS AND PLOT ####
+
+###### LaTeX code for the table of descriptive statistics of numerical variables 
 stargazer(data_final,digits = 2)
 
 ## TARGET VARIABLE: DENY
@@ -279,19 +262,19 @@ barplot(prop.table(table(data_final$loan_purpose))*100,
 
 ## LOAN AMOUNT
 summary(data_final$loan_amount)
-hist(data_final$loan_amount, breaks = 50)
+hist(data_final$loan_amount, breaks = 50,xlab='Loan Amount')
 
 
 ## LOAN TO VALUE RATIO
 # ploting histograms
-hist(data_final$loan_to_value_ratio, breaks = 50)
+hist(data_final$loan_to_value_ratio, breaks = 50,xlab='Loan To Value Ratio')
 summary(data_final$loan_to_value_ratio)
 
 
 ## LOAN TERM
 # The number of months after which the legal obligation will mature or terminate, or would have matured or terminated
 summary(data_final$loan_term)
-hist(data_final$loan_term, breaks = 50)
+hist(data_final$loan_term, breaks = 50,xlab='Loan Term')
 
 
 ## PPROPERTY VALUE
@@ -318,12 +301,38 @@ lines(density(data_final$income), col = "blue", lwd = 2)
 # 1: Male
 # 2: Female
 table(data_final$applicant_sex)
-barplot(table(data_final$applicant_sex))
+barplot(table(data_final$applicant_sex),legend='1 for Male, 2 for Female')
 
 
 ## APPLICANT AGE
-table(data_final$applicant_age)
-barplot(table(data_final$applicant_age))
+
+# to reorganize the categories (">74" years was before "25-34" on the bar plot) we capture manually the percentages and draw a new barplot
+age_groups <- c("<25", "25-34", "35-44", "45-54", "55-64", "65-74", ">74")
+proportions <- c(0.03934274, 0.21150511, 0.22421216, 0.20981369, 0.17215811, 0.10475308, 0.03821512)
+
+color_palette <- colorRampPalette(c("skyblue", "blue"))(7) # colors for the barplot
+barplot(proportions, names.arg = age_groups, xlab = "Age Groups", ylab = "Proportions", col =color_palette)
+
+
+
+#### BIVARIATE STATISTICS #### 
+
+# Visualize the relationship between income and derived_race with a boxplot
+ggplot(data_final, aes(x=derived_race, y=income)) + 
+  geom_boxplot() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Income by Derived Race", x = "Derived Race", y = "Income")
+
+# Ensure 'applicant_sex' is treated as a categorical variable
+data_final$applicant_sex <- as.factor(data_final$applicant_sex)
+
+# Visualize the relationship between income and applicant_sex with a boxplot
+ggplot(data_final, aes(x=applicant_sex, y=income)) + 
+  geom_boxplot() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Income by Applicant Sex", x = "Applicant Sex", y = "Income")
+
+
 
 #######################################
 #              MODEL                  #
@@ -408,18 +417,7 @@ train_indices <- sample(seq_len(nrow(data_final)), size = training_rows)
 train_set <- data_final[train_indices, ]
 test_set <- data_final[-train_indices, ]
 
-
-
-### Model 1 ###
-
-# Explain the deny by the discriminatory variable 
-# deny = Beta_0 + Beta_1*race + Beta_2*sex + Beta_3*age + Beta_4*same_sex
-model_1 <- glm(deny ~ derived_race + applicant_sex, data = train_set, family = "binomial")
-coef_1 <- coefficients(model_1)
-summary(model_1)
-# we can see that the variable "applicant_sex" and "same_sex" are not significant then we will remove it from the model
-
-### Model 2 ###
+### Model ###
 
 # Add  control variables
 model_2 <- glm(deny ~ derived_race + applicant_age + log_income + log_loan_amount 
@@ -427,7 +425,6 @@ model_2 <- glm(deny ~ derived_race + applicant_age + log_income + log_loan_amoun
                data = train_set,
                family = "binomial")
 summary(model_2)
-
 
 coef_2 <- coefficients(model_2)
 coef_2 <- coef_2[!is.na(coef_2)]
@@ -451,9 +448,11 @@ accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
 
 # Print the confusion matrix and accuracy
 print(conf_matrix)
+# to have the latex code
+xtable(conf_matrix)
 print(paste("Accuracy:", accuracy))
-
 # We obtain approximately 83% of accuracy
+
 
 #######################################
 #        INTERPRETATION OF            #
@@ -466,93 +465,55 @@ marg_eff <- margins(model_2)
 
 # Summary of marginal effects
 summary_me <- summary(marg_eff)
-summary_me
-### CREATION OF AN 'AVERAGE APPLICANT' ###
+summary(marg_eff)
+## Doing a boxplot of the marginal effects ##
+summary_me <- data.frame(
+  factor = c('age<25', 'applicant_age>74', 'age between 25-34', 'age between 45-54', 
+             'age between 55-64', 'age between 65-74', 'Woman', 'Asian', 
+             'Black', 'Native', 'Home Improvement', 'Refinancing', 
+             'Cash-Out Refinancing', 'Ohter Purpose', 'Loan term', 'log(income)', 'log(loan_amount)', 
+             'log(property_value)'),
+  AME = c(-0.0232, -0.0293, -0.0200, -0.0004, -0.0224, -0.0372, -0.0110, 0.0690, 
+          0.1168, 0.0678, 0.2323, 0.1182, 0.1193, 0.2612, 0.0003, -0.0893, 0.0061, -0.0418),
+  lower = c(-0.0329, -0.0371, -0.0252, -0.0054, -0.0274, -0.0427, -0.0143, 0.0584, 
+            0.1103, 0.0478, 0.2248, 0.1127, 0.1149, 0.2533, 0.0003, -0.0924, 0.0030, -0.0458),
+  upper = c(-0.0134, -0.0215, -0.0147, 0.0046, -0.0173, -0.0316, -0.0077, 0.0797, 
+            0.1233, 0.0878, 0.2398, 0.1237, 0.1237, 0.2692, 0.0003, -0.0862, 0.0091, -0.0378)
+)
 
-xasian <- c(1, 1, 0, 0, 0, 0, 0, 0, 0, 0, log(median(test_set$income)), 
-            log(median(test_set$loan_amount)), 0, 0, 0, 0, 
-            median(test_set$loan_term), log(median(test_set$property_value)), 1)
-xblack <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, log(median(test_set$income)), 
-            log(median(test_set$loan_amount)), 0, 0, 0, 0, 
-            median(test_set$loan_term), log(median(test_set$property_value)), 1)
-xnative <- c(1, 0, 0, 1, 0, 0, 0, 0, 0, 0, log(median(test_set$income)), 
-             log(median(test_set$loan_amount)), 0, 0, 0, 0, 
-             median(test_set$loan_term), log(median(test_set$property_value)), 1)
-xwhite <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, log(median(test_set$income)), 
-            log(median(test_set$loan_amount)), 0, 0, 0, 0, 
-            median(test_set$loan_term), log(median(test_set$property_value)), 1)
+# Order factors by the absolute size of AME for plotting
+summary_me$factor <- factor(summary_me$factor, levels = summary_me$factor[order(abs(summary_me$AME))])
 
-p_black <- exp(coef_2 %*% xblack) / (1 + exp(coef_2 %*% xblack)) # Probability of being deny for the black people
-p_native <- exp(coef_2 %*% xnative) / (1 + exp(coef_2 %*% xnative)) # Probability of being deny for the native people
-p_asian <- exp(coef_2 %*% xasian) / (1 + exp(coef_2 %*% xasian)) # Probability of being deny for the asian people
-p_white <- exp(coef_2 %*% xwhite) / (1 + exp(coef_2 %*% xwhite))     # Probability of being deny for the white people
-
-ratio_black_white <- p_black / p_white
-ratio_black_white
-
-p_black
-p_native
-p_white
-p_asian
-
-
-matrix_p <- matrix(c(p_black, p_native, p_asian, p_white), nrow = 1)
-colnames(matrix_p)<- c("P(deny|black)", "P(deny|native)",  "P(deny|asian)", "P(deny|white)")
-rownames(matrix_p) <- "Value"
-matrix_p
-
-
-# this matrix present the probability of being denied for an average applicant, the only modality that change
-# is the race of the applicant, we can thus interpret the probability found for each race.
-
-
-### Effect of being a women
-# Here we do the same, but we change both modalities of gender and race.
-x_white_women <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, log(median(test_set$income)), 
-                   log(median(test_set$loan_amount)), 0, 0, 0, 0, 
-                   median(test_set$loan_term),log(median(test_set$property_value)), 2)
-x_black_women <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, log(median(test_set$income)), 
-                   log(median(test_set$loan_amount)), 0, 0, 0, 0, 
-                   median(test_set$loan_term),log(median(test_set$property_value)), 2)
-x_white_men <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0,log(median(test_set$income)), 
-                 log(median(test_set$loan_amount)), 0, 0, 0, 0, 
-                 median(test_set$loan_term),log(median(test_set$property_value)),  1)
-x_black_men <- c(1, 0, 1, 0, 0, 0, 0, 0, 0, 0, log(median(test_set$income)), 
-                 log(median(test_set$loan_amount)), 0, 0, 0, 0, 
-                 median(test_set$loan_term),log(median(test_set$property_value)), 1)
-
-p_white_women <- exp(coef_2 %*% x_white_women) / (1 + exp(coef_2 %*% x_white_women)) # Probability of being deny for the black people
-p_white_men <- exp(coef_2 %*% x_white_men) / (1 + exp(coef_2 %*% x_white_men)) # Probability of being deny for the native people
-p_black_women <- exp(coef_2 %*% x_black_women) / (1 + exp(coef_2 %*% x_black_women)) # Probability of being deny for the black people
-p_black_men <- exp(coef_2 %*% x_black_men) / (1 + exp(coef_2 %*% x_black_men)) # Probability of being deny for the native people
-
-
-p_white_men
-p_white_women
-p_black_men
-p_black_women
-
-matrix_p_race_sex <- matrix(c(p_black_men, p_black_women, p_white_women, p_white_men), nrow = 1)
-colnames(matrix_p_race_sex)<- c("P(deny|black, men)", "P(deny|black, women)",  "P(deny|white, women)", "P(deny|white, men)")
-rownames(matrix_p_race_sex) <- "Value"
-matrix_p_race_sex
+# Create a plot
+ggplot(summary_me, aes(x = factor, y = AME)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2) +
+  coord_flip() +  # Flip the coordinates to make the plot horizontal
+  labs(y = "Average Marginal Effect (AME)", x = "Factor", title = "Marginal Effects with Confidence Intervals") +
+  theme_bw() + # Use a black and white theme
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())  # Remove grid lines
 
 
 ### USA ###
-# Obtenir la carte des états des États-Unis
+
+# get the map of the USA
 us_states_map <- map_data("state")
 
-# Lire les valeurs depuis le fichier CSV, en spécifiant le séparateur correct
+##### READ ME ########
+#o avoid having to retrieve the data from the 50 states and rerun this code 50 times 
+#we provide you with our "final_value.csv" file which presents the Average Marginal Effect associated with the variable Black, 
+#for each state in order to be able to visualize it on the map.
 final_values <- read.csv("final_value.csv", sep = ";")
 
-# Fusionner les données géographiques avec les valeurs du CSV
+
 us_states_map <- merge(us_states_map, final_values, by = "region")
 
 ggplot(data = us_states_map, aes(x = long, y = lat, group = group, fill = value)) +
   geom_polygon(color = "white") +
-  scale_fill_gradient(low = "white", high = "red", limits = c(1, max(final_values$value))) +
+  scale_fill_gradient(low = "white", high = "red", limits = c(0, max(final_values$value))) +
   theme_void() +
   coord_fixed(1.3) +
-  guides(fill = guide_colorbar(title = "Ratio"))
+  guides(fill = guide_colorbar(title = "AME"))
 
+sink()
 
